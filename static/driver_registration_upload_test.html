@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Registration with Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 2px dashed #667eea;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Driver Registration</h1>
+        <p class="subtitle">Complete registration with document uploads</p>
+        
+        <form id="registrationForm">
+            <!-- Personal Details -->
+            <div class="section">
+                <div class="section-title">📋 Personal Details</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" name="full_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="text" name="phone_number" required placeholder="+44...">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth *</label>
+                        <input type="date" name="dob" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Address *</label>
+                    <textarea name="address" rows="2" required></textarea>
+                </div>
+            </div>
+            
+            <!-- Identity Verification -->
+            <div class="section">
+                <div class="section-title">🆔 Identity Verification</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Government ID Type *</label>
+                        <select name="govt_id_type" required>
+                            <option value="">Select...</option>
+                            <option value="passport">Passport</option>
+                            <option value="driving_license">Driving License</option>
+                            <option value="national_id">National ID</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Government ID Number *</label>
+                        <input type="text" name="govt_id_number" required>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Government ID Photo *</label>
+                        <input type="file" name="govt_id_photo" accept="image/*" required>
+                        <div class="file-info">Upload clear photo of ID</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Selfie Photo *</label>
+                        <input type="file" name="selfie_photo" accept="image/*" required>
+                        <div class="file-info">Upload a clear selfie</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Professional Details -->
+            <div class="section">
+                <div class="section-title">👔 Professional Details</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Years of Experience *</label>
+                        <input type="number" name="years_of_experience" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>License Number *</label>
+                        <input type="text" name="license_number" required>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>License Category *</label>
+                        <input type="text" name="license_category" required placeholder="e.g., B, C, D">
+                    </div>
+                    <div class="form-group">
+                        <label>License Expiry Date *</label>
+                        <input type="date" name="license_expiry_date" required>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>License Front Photo *</label>
+                        <input type="file" name="license_front" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>License Back Photo *</label>
+                        <input type="file" name="license_back" accept="image/*" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Driver Photo *</label>
+                    <input type="file" name="driver_photo" accept="image/*" required>
+                    <div class="file-info">Professional photo for profile</div>
+                </div>
+            </div>
+            
+            <!-- Vehicle Details -->
+            <div class="section">
+                <div class="section-title">🚙 Vehicle Details</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Vehicle Type *</label>
+                        <select name="vehicle_type" required>
+                            <option value="">Select...</option>
+                            <option value="truck">Truck</option>
+                            <option value="van">Van</option>
+                            <option value="car">Car</option>
+                            <option value="motorcycle">Motorcycle</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Number *</label>
+                        <input type="text" name="vehicle_number" required>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Vehicle Model *</label>
+                        <input type="text" name="vehicle_model" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Capacity *</label>
+                        <input type="text" name="vehicle_capacity" required placeholder="e.g., 5 passengers">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Vehicle Photo *</label>
+                        <input type="file" name="vehicle_photo" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>RC Book Photo *</label>
+                        <input type="file" name="rc_book_photo" accept="image/*" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Pollution Certificate Photo *</label>
+                    <input type="file" name="pollution_certificate_photo" accept="image/*" required>
+                </div>
+            </div>
+            
+            <!-- Service Area -->
+            <div class="section">
+                <div class="section-title">📍 Service Area</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Service Pincodes *</label>
+                        <input type="text" name="pincodes" required placeholder="e.g., SW1A 1AA, SW1A 2AA">
+                        <div class="file-info">Comma-separated postcodes</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Shift *</label>
+                        <select name="preferred_shift" required>
+                            <option value="">Select...</option>
+                            <option value="morning">Morning</option>
+                            <option value="evening">Evening</option>
+                            <option value="full_day">Full Day</option>
+                            <option value="night">Night</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bank Details -->
+            <div class="section">
+                <div class="section-title">🏦 Bank Details</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Account Number *</label>
+                        <input type="text" name="account_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sort Code *</label>
+                        <input type="text" name="sort_code" required placeholder="XX-XX-XX">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Account Holder Name *</label>
+                        <input type="text" name="holder_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>UPI ID (Optional)</label>
+                        <input type="text" name="upi_id">
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" id="submitBtn">Register Driver</button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Uploading documents and registering...</p>
+            </div>
+            
+            <div class="response" id="response"></div>
+        </form>
+    </div>
+    
+    <script>
+        const form = document.getElementById('registrationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const response = document.getElementById('response');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            response.style.display = 'none';
+            
+            // Create FormData
+            const formData = new FormData(form);
+            
+            try {
+                const res = await fetch('http://localhost:8001/api/auth/register/driver/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    response.className = 'response success';
+                    response.innerHTML = `
+                        <h3>✅ Registration Successful!</h3>
+                        <p><strong>Driver ID:</strong> ${data.driver_id}</p>
+                        <p><strong>Phone:</strong> ${data.phone_number}</p>
+                        <p><strong>Next Step:</strong> ${data.next_step}</p>
+                        <h4>Documents Uploaded:</h4>
+                        <ul>
+                            ${Object.entries(data.documents_uploaded).map(([key, url]) => 
+                                `<li><strong>${key}:</strong> <a href="${url}" target="_blank">View</a></li>`
+                            ).join('')}
+                        </ul>
+                    `;
+                } else {
+                    response.className = 'response error';
+                    response.innerHTML = `
+                        <h3>❌ Registration Failed</h3>
+                        <p>${data.detail || data.message || 'Unknown error'}</p>
+                    `;
+                }
+                
+                response.style.display = 'block';
+            } catch (error) {
+                response.className = 'response error';
+                response.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                `;
+                response.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+-- Increase column sizes for encrypted data storage
+-- Run this in pgAdmin on your UTHO database
+
+-- CUSTOMERS TABLE
+ALTER TABLE customers 
+ALTER COLUMN email TYPE VARCHAR(500),
+ALTER COLUMN full_name TYPE VARCHAR(500),
+ALTER COLUMN phone_number TYPE VARCHAR(500),
+ALTER COLUMN address TYPE TEXT;
+
+-- DRIVERS TABLE
+ALTER TABLE drivers 
+ALTER COLUMN email TYPE VARCHAR(500),
+ALTER COLUMN full_name TYPE VARCHAR(500),
+ALTER COLUMN phone_number TYPE VARCHAR(500),
+ALTER COLUMN address TYPE TEXT,
+ALTER COLUMN dob TYPE VARCHAR(500);
+
+-- DRIVER_DOCUMENTS TABLE
+ALTER TABLE driver_documents 
+ALTER COLUMN govt_id_number TYPE VARCHAR(500),
+ALTER COLUMN license_number TYPE VARCHAR(500);
+
+-- DRIVER_BANK_DETAILS TABLE
+ALTER TABLE driver_bank_details 
+ALTER COLUMN bank_account_number TYPE VARCHAR(500),
+ALTER COLUMN bank_ifsc TYPE VARCHAR(500),
+ALTER COLUMN account_holder_name TYPE VARCHAR(500),
+ALTER COLUMN upi_id TYPE VARCHAR(500);
+
+-- DRIVER_VEHICLE TABLE
+ALTER TABLE driver_vehicle 
+ALTER COLUMN vehicle_number_plate TYPE VARCHAR(500);
+
+-- ADMINS TABLE (if phone needs encryption)
+ALTER TABLE admins 
+ALTER COLUMN phone_number TYPE VARCHAR(500);

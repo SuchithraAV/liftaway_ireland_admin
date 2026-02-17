@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notifications WS Test</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+      .container { max-width: 600px; margin: 0 auto; }
+      label { display:block; margin-top:8px; font-weight: 500; }
+      input[type=text], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+      button { margin-top: 10px; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      #connectBtn { background: #4CAF50; color: white; }
+      #disconnectBtn { background: #f44336; color: white; }
+      #pingBtn { background: #2196F3; color: white; }
+      #log { margin-top: 16px; max-height: 500px; overflow:auto; background:#fff; border:1px solid #ddd; border-radius: 8px; padding: 0; }
+      .notification-card { padding: 12px 16px; border-bottom: 1px solid #eee; }
+      .notification-card:last-child { border-bottom: none; }
+      .notification-card.removed { background: #ffebee; opacity: 0.6; }
+      .notification-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .notification-title { font-weight: 600; color: #333; font-size: 14px; }
+      .notification-time { font-size: 11px; color: #888; }
+      .notification-message { color: #555; font-size: 13px; line-height: 1.4; }
+      .notification-data { margin-top: 6px; font-size: 11px; color: #666; background: #f9f9f9; padding: 6px 8px; border-radius: 4px; font-family: monospace; }
+      .system-msg { padding: 8px 16px; background: #e3f2fd; color: #1565c0; font-size: 12px; border-bottom: 1px solid #bbdefb; }
+      .status { margin-left:8px; font-weight:600; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+      .status.open { background: #c8e6c9; color: #2e7d32; }
+      .status.closed { background: #ffcdd2; color: #c62828; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>🔔 Live Notifications Test</h2>
+
+      <label>WS Host (include scheme and port)
+        <input id="host" type="text" value="ws://localhost:8001" />
+      </label>
+
+      <label>API Prefix (default: /api)
+        <input id="apiPrefix" type="text" value="/api" />
+      </label>
+
+      <label>Role
+        <select id="role">
+          <option value="customer">customer</option>
+          <option value="driver">driver</option>
+        </select>
+      </label>
+
+      <label>JWT Token (access token)
+        <input id="token" type="text" placeholder="paste token here" />
+      </label>
+
+      <div style="margin-top: 12px;">
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+        <button id="pingBtn" disabled>Ping</button>
+        <span class="status closed" id="connectionStatus">Disconnected</span>
+      </div>
+
+      <div id="log"></div>
+    </div>
+
+    <script>
+      const connectBtn = document.getElementById('connectBtn')
+      const disconnectBtn = document.getElementById('disconnectBtn')
+      const pingBtn = document.getElementById('pingBtn')
+      const hostInput = document.getElementById('host')
+      const prefixInput = document.getElementById('apiPrefix')
+      const roleInput = document.getElementById('role')
+      const tokenInput = document.getElementById('token')
+      const log = document.getElementById('log')
+      const statusEl = document.getElementById('connectionStatus')
+
+      let ws = null
+
+      function formatTime(isoString) {
+        if (!isoString) return '';
+        try {
+          const d = new Date(isoString);
+          return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' · ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } catch(e) { return isoString; }
+      }
+
+      function addNotification(n) {
+        const el = document.createElement('div');
+        el.className = 'notification-card';
+        el.id = 'notif-' + (n.id || Date.now());
+        
+        // Handle "remove" action for read notifications
+        if (n.type === 'notification_read' && n.action === 'remove') {
+          const existing = document.getElementById('notif-' + n.id);
+          if (existing) {
+            existing.classList.add('removed');
+            existing.querySelector('.notification-title').textContent += ' (Read)';
+          }
+          return;
+        }
+        
+        const title = n.title || 'Notification';
+        const message = n.message || '';
+        const time = formatTime(n.created_at);
+        const data = n.data ? JSON.stringify(n.data) : '';
+        
+        el.innerHTML = `
+          <div class="notification-header">
+            <span class="notification-title">${title}</span>
+            <span class="notification-time">${time}</span>
+          </div>
+          <div class="notification-message">${message}</div>
+          ${data ? `<div class="notification-data">${data}</div>` : ''}
+        `;
+        log.prepend(el);
+      }
+
+      function addSystemMsg(text) {
+        const el = document.createElement('div');
+        el.className = 'system-msg';
+        el.textContent = text;
+        log.prepend(el);
+      }
+
+      connectBtn.addEventListener('click', () => {
+        if(ws) return;
+        const host = hostInput.value.trim();
+        const prefix = prefixInput.value.trim();
+        const role = roleInput.value;
+        const token = tokenInput.value.trim();
+
+        if(!host){ alert('Enter ws host'); return; }
+        if(!token && !confirm('No token. Continue?')) return;
+
+        const url = `${host}${prefix}/server/${role}/notifications?token=${encodeURIComponent(token)}`;
+        addSystemMsg('Connecting to ' + url);
+        ws = new WebSocket(url);
+
+        ws.onopen = () => {
+          statusEl.textContent = 'Connected';
+          statusEl.className = 'status open';
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          pingBtn.disabled = false;
+          addSystemMsg('✓ WebSocket connected as ' + role);
+        };
+
+        ws.onmessage = (evt) => {
+          if (evt.data === 'pong') {
+            addSystemMsg('← pong');
+            return;
+          }
+          try {
+            const d = JSON.parse(evt.data);
+            if (d.type === 'notification' && d.notification) {
+              addNotification(d.notification);
+            } else {
+              addSystemMsg('Message: ' + evt.data);
+            }
+          } catch(e) {
+            addSystemMsg('Raw: ' + evt.data);
+          }
+        };
+
+        ws.onclose = (ev) => {
+          statusEl.textContent = 'Disconnected';
+          statusEl.className = 'status closed';
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          pingBtn.disabled = true;
+          addSystemMsg('✗ Closed (code=' + ev.code + ')');
+          ws = null;
+        };
+
+        ws.onerror = () => {
+          addSystemMsg('✗ Connection error');
+        };
+      });
+
+      disconnectBtn.addEventListener('click', () => {
+        if(ws) ws.close(1000, 'user');
+      });
+
+      pingBtn.addEventListener('click', () => {
+        if(ws) { ws.send('ping'); addSystemMsg('→ ping'); }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Assistance - Issue Chat System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* Tab Navigation */
+        .tab-container {
+            display: flex;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tab-btn.active {
+            color: white;
+            border-bottom: 3px solid white;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 .icon {
+            font-size: 24px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Issues List */
+        .issues-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .issue-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .issue-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .issue-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .issue-card .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-assigned { background: #cce5ff; color: #004085; }
+        .status-in_progress { background: #d4edda; color: #155724; }
+        .status-completed { background: #d1ecf1; color: #0c5460; }
+        
+        .issue-card .details {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .issue-card .details p {
+            margin-bottom: 5px;
+        }
+        
+        .issue-card .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Issue Detail View */
+        .issue-detail {
+            display: none;
+        }
+        
+        .issue-detail.active {
+            display: block;
+        }
+        
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .detail-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .detail-item label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .detail-item .value {
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Chat Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .chat-modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chat-header .close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chat-header .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .chat-status {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.connected { background: #27ae60; }
+        .status-dot.disconnected { background: #e74c3c; }
+        .status-dot.connecting { background: #f39c12; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            min-height: 300px;
+            max-height: 400px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message.sent {
+            align-items: flex-end;
+        }
+        
+        .message.received {
+            align-items: flex-start;
+        }
+        
+        .message .bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .message.sent .bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.received .bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .message .sender {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+            text-transform: capitalize;
+        }
+        
+        .message .time {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .message.system {
+            align-items: center;
+        }
+        
+        .message.system .bubble {
+            background: #fff3cd;
+            color: #856404;
+            font-style: italic;
+            font-size: 13px;
+        }
+        
+        .chat-input {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            padding: 12px 20px;
+        }
+        
+        .chat-input button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+        
+        .chat-input button:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+        
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        
+        .empty-state .icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+        }
+        
+        .toast {
+            background: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast.success { background: #27ae60; }
+        .toast.error { background: #e74c3c; }
+        .toast.info { background: #3498db; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .issues-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chat-modal {
+                width: 95%;
+                max-height: 90vh;
+            }
+        }
+        
+        /* Chat Icon Button */
+        .chat-icon-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        .chat-icon-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .chat-icon-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('customer')">
+            👤 Customer Portal
+        </button>
+        <button class="tab-btn" onclick="switchTab('driver')">
+            🚗 Driver Portal
+        </button>
+    </div>
+
+    <!-- Customer Tab Content -->
+    <div class="tab-content active" id="customerTab">
+        <!-- Auth Card -->
+        <div class="card">
+            <h2><span class="icon">🔐</span> Customer Authentication</h2>
+            <div class="form-group">
+                <label>Customer Backend URL</label>
+                <input type="text" id="customerBackendUrl" value="http://localhost:8001" placeholder="http://localhost:8001">
+            </div>
+            <div class="form-group">
+                <label>Access Token (JWT)</label>
+                <input type="text" id="customerToken" placeholder="Paste your customer JWT token here">
+            </div>
+            <button class="btn btn-primary" onclick="loadCustomerIssues()">
+                🔄 Load My Issues
+            </button>
+        </div>
+
+        <!-- Issues List View -->
+        <div id="customerIssuesList">
+            <div class="card">
+                <h2><span class="icon">📋</span> My Issues</h2>
+                <div id="customerIssuesContainer">
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <p>Enter your access token and click "Load My Issues" to view your issues</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue Detail View -->
+        <div class="issue-detail" id="customerIssueDetail">
+            <div class="card">
+                <div class="detail-header">
+                    <h2><span class="icon">📄</span> Issue Details</h2>
+                    <button class="btn btn-secondary" onclick="backToCustomerList()">
+                        ← Back to List
+                    </button>
+                </div>
+                <div class="detail-grid" id="customerDetailGrid">
+                    <!-- Details will be populated here -->
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn btn-success" id="customerChatBtn" onclick="openCustomerChat()" disabled>
+                        💬 Chat with Driver
+                    </button>
+                    <p id="customerChatStatus" style="margin-top: 10px; color: #666; font-size: 14px;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Driver Tab Content -->
+    <div class="tab-content" id="driverTab">
+        <!-- Auth Card -->
+        <div class="card">
+            <h2><span class="icon">🔐</span> Driver Authentication</h2>
+            <div class="form-group">
+                <label>Driver Backend URL</label>
+                <input type="text" id="driverBackendUrl" value="http://localhost:8002" placeholder="http://localhost:8002">
+            </div>
+            <div class="form-group">
+                <label>Access Token (JWT)</label>
+                <input type="text" id="driverToken" placeholder="Paste your driver JWT token here">
+            </div>
+            <button class="btn btn-primary" onclick="loadDriverIssues()">
+                🔄 Load Accepted Issues
+            </button>
+        </div>
+
+        <!-- Driver Issues List -->
+        <div class="card">
+            <h2><span class="icon">📋</span> My Accepted Issues</h2>
+            <div id="driverIssuesContainer">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>Enter your access token and click "Load Accepted Issues" to view your assigned issues</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="modal-overlay" id="chatModal">
+        <div class="chat-modal">
+            <div class="chat-header">
+                <h3>💬 <span id="chatTitle">Issue Chat</span></h3>
+                <button class="close-btn" onclick="closeChat()">×</button>
+            </div>
+            <div class="chat-status" id="chatConnectionStatus">
+                <span class="status-dot disconnected" id="chatStatusDot"></span>
+                <span id="chatStatusText">Disconnected</span>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message system">
+                    <div class="bubble">Connecting to chat...</div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Type your message..." disabled onkeypress="handleChatKeyPress(event)">
+                <button id="chatSendBtn" onclick="sendChatMessage()" disabled>➤</button>
+            </div>
+            <div style="padding:10px; background:#f7f7f7; border-top:1px solid #eee; max-height:120px; overflow:auto; font-size:12px;" id="chatDebugArea"></div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentTab = 'customer';
+        let customerIssues = [];
+        let driverIssues = [];
+        let selectedIssue = null;
+        let chatSocket = null;
+        let currentUserId = null;
+        let currentUserType = null;
+
+        // Note: Encryption is handled server-side using AES-256-GCM with SHA-256 key derivation
+        // Messages are encrypted before storing in database and decrypted when retrieved
+
+        // Tab switching
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tab === 'customer') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('customerTab').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+                document.getElementById('driverTab').classList.add('active');
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Parse JWT to get user info
+        function parseToken(token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                // Some tokens use different keys for user id - try common fallbacks
+                const userId = payload.sub || payload.user_id || payload.id || payload.uid;
+                const role = payload.role || payload.r || payload.type;
+                return {
+                    userId: userId,
+                    role: role,
+                    exp: payload.exp
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleString();
+        }
+
+        // Get status class
+        function getStatusClass(status) {
+            return `status-${status.toLowerCase().replace(' ', '_')}`;
+        }
+
+        // ==================== CUSTOMER FUNCTIONS ====================
+
+        async function loadCustomerIssues() {
+            const backendUrl = document.getElementById('customerBackendUrl').value;
+            const token = document.getElementById('customerToken').value;
+
+            if (!token) {
+                showToast('Please enter your access token', 'error');
+                return;
+            }
+
+            const tokenInfo = parseToken(token);
+            if (!tokenInfo) {
+                showToast('Invalid token format', 'error');
+                return;
+            }
+
+            currentUserId = tokenInfo.userId;
+            currentUserType = 'customer';
+
+            const container = document.getElementById('customerIssuesContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading issues...</div>';
+
+            try {
+                const response = await fetch(`${backendUrl}/api/issues/my-issues`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                customerIssues = await response.json();
+                renderCustomerIssues();
+                showToast(`Loaded ${customerIssues.length} issues`, 'success');
+
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Failed to load issues: ${error.message}</p></div>`;
+                showToast('Failed to load issues', 'error');
+            }
+        }
+
+        function renderCustomerIssues() {
+            const container = document.getElementById('customerIssuesContainer');
+            
+            if (customerIssues.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No issues found</p></div>';
+                return;
+            }
+
+            container.innerHTML = `<div class="issues-grid">${customerIssues.map(issue => `
+                <div class="issue-card">
+                    <h3>
+                        ${issue.category_name || 'Issue'}
+                        <span class="status ${getStatusClass(issue.status)}">${issue.status}</span>
+                    </h3>
+                    <div class="details">
+                        <p>📍 ${issue.pickup_location}</p>
+                        <p>📝 ${issue.description.substring(0, 100)}${issue.description.length > 100 ? '...' : ''}</p>
+                        <p>💰 ₹${issue.payment_amount}</p>
+                        <p>📅 ${formatDate(issue.created_at)}</p>
+                        ${issue.assigned_driver_name ? `<p>🚗 Driver: ${issue.assigned_driver_name}</p>` : ''}
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="viewCustomerIssueDetail('${issue.id}')">
+                            View Details
+                        </button>
+                        ${issue.status !== 'pending' && issue.status !== 'completed' && issue.assigned_driver_id ? `
+                            <button class="chat-icon-btn" onclick="openCustomerChatDirect('${issue.id}')" title="Chat with Driver">
+                                💬
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('')}</div>`;
+        }
+
+        function viewCustomerIssueDetail(issueId) {
+            selectedIssue = customerIssues.find(i => i.id === issueId);
+            if (!selectedIssue) return;
+
+            document.getElementById('customerIssuesList').style.display = 'none';
+            document.getElementById('customerIssueDetail').classList.add('active');
+
+            const grid = document.getElementById('customerDetailGrid');
+            grid.innerHTML = `
+                <div class="detail-item">
+                    <label>Issue ID</label>
+                    <div class="value">${selectedIssue.id}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Category</label>
+                    <div class="value">${selectedIssue.category_name || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Status</label>
+                    <div class="value"><span class="status ${getStatusClass(selectedIssue.status)}">${selectedIssue.status}</span></div>
+                </div>
+                <div class="detail-item">
+                    <label>Payment Amount</label>
+                    <div class="value">₹${selectedIssue.payment_amount}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Pickup Location</label>
+                    <div class="value">${selectedIssue.pickup_location}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Description</label>
+                    <div class="value">${selectedIssue.description}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Created At</label>
+                    <div class="value">${formatDate(selectedIssue.created_at)}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Assigned Driver</label>
+                    <div class="value">${selectedIssue.assigned_driver_name || 'Not assigned yet'}</div>
+                </div>
+                <div class="detail-item">
+                    <label>OTP Code</label>
+                    <div class="value" style="font-size: 24px; color: #667eea;">${selectedIssue.otp_code}</div>
+                </div>
+                <div class="detail-item">
+                    <label>Payment Status</label>
+                    <div class="value">${selectedIssue.payment_status}</div>
+                </div>
+            `;
+
+            // Update chat button
+            const chatBtn = document.getElementById('customerChatBtn');
+            const chatStatus = document.getElementById('customerChatStatus');
+            
+            if (selectedIssue.status === 'completed') {
+                chatBtn.disabled = true;
+                chatStatus.textContent = 'Chat is closed - Issue completed';
+            } else if (selectedIssue.status === 'pending' || !selectedIssue.assigned_driver_id) {
+                chatBtn.disabled = true;
+                chatStatus.textContent = 'Chat available after driver accepts the issue';
+            } else {
+                chatBtn.disabled = false;
+                chatStatus.textContent = 'Click to chat with your driver';
+            }
+        }
+
+        function backToCustomerList() {
+            document.getElementById('customerIssuesList').style.display = 'block';
+            document.getElementById('customerIssueDetail').classList.remove('active');
+            selectedIssue = null;
+        }
+
+        function openCustomerChat() {
+            if (!selectedIssue) return;
+            openChatModal(selectedIssue.id, 'customer');
+        }
+
+        function openCustomerChatDirect(issueId) {
+            selectedIssue = customerIssues.find(i => i.id === issueId);
+            if (!selectedIssue) return;
+            openChatModal(issueId, 'customer');
+        }
+
+        // ==================== DRIVER FUNCTIONS ====================
+
+        async function loadDriverIssues() {
+            const backendUrl = document.getElementById('driverBackendUrl').value;
+            const token = document.getElementById('driverToken').value;
+
+            if (!token) {
+                showToast('Please enter your access token', 'error');
+                return;
+            }
+
+            const tokenInfo = parseToken(token);
+            if (!tokenInfo) {
+                showToast('Invalid token format', 'error');
+                return;
+            }
+
+            currentUserId = tokenInfo.userId;
+            currentUserType = 'driver';
+
+            const container = document.getElementById('driverIssuesContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading issues...</div>';
+
+            try {
+                // Load my assigned issues (in-progress) and completed issues
+                const [myIssuesRes, completedRes] = await Promise.all([
+                    fetch(`${backendUrl}/api/driver/issues/my-issues`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${backendUrl}/api/driver/issues/completed`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                let allIssues = [];
+                
+                if (myIssuesRes.ok) {
+                    const myIssues = await myIssuesRes.json();
+                    allIssues = [...myIssues];
+                }
+                
+                if (completedRes.ok) {
+                    const completed = await completedRes.json();
+                    allIssues = [...allIssues, ...completed];
+                }
+
+                driverIssues = allIssues;
+                renderDriverIssues();
+                showToast(`Loaded ${driverIssues.length} issues`, 'success');
+
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Failed to load issues: ${error.message}</p></div>`;
+                showToast('Failed to load issues', 'error');
+            }
+        }
+
+        function renderDriverIssues() {
+            const container = document.getElementById('driverIssuesContainer');
+            
+            if (driverIssues.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No accepted issues found</p></div>';
+                return;
+            }
+
+            container.innerHTML = `<div class="issues-grid">${driverIssues.map(issue => `
+                <div class="issue-card">
+                    <h3>
+                        ${issue.category_name || 'Issue'}
+                        <span class="status ${getStatusClass(issue.status)}">${issue.status}</span>
+                    </h3>
+                    <div class="details">
+                        <p>👤 Customer: ${issue.customer_name || 'N/A'}</p>
+                        <p>📍 ${issue.pickup_location}</p>
+                        <p>📝 ${issue.description.substring(0, 100)}${issue.description.length > 100 ? '...' : ''}</p>
+                        <p>💰 ₹${issue.payment_amount}</p>
+                        ${issue.negotiated_price ? `<p>💵 Negotiated: ₹${issue.negotiated_price} (${issue.negotiated_status})</p>` : ''}
+                        <p>📅 ${formatDate(issue.created_at)}</p>
+                    </div>
+                    <div class="actions">
+                        ${issue.status !== 'pending' && issue.status !== 'completed' ? `
+                            <button class="chat-icon-btn" onclick="openDriverChat('${issue.id}')" title="Chat with Customer">
+                                💬
+                            </button>
+                        ` : ''}
+                        ${issue.status === 'completed' ? `
+                            <span style="color: #27ae60; font-weight: 600;">✅ Completed</span>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('')}</div>`;
+        }
+
+        function openDriverChat(issueId) {
+            selectedIssue = driverIssues.find(i => i.id === issueId);
+            if (!selectedIssue) return;
+            
+            currentUserType = 'driver';
+            const tokenInfo = parseToken(document.getElementById('driverToken').value);
+            if (tokenInfo) {
+                currentUserId = tokenInfo.userId;
+            }
+            
+            openChatModal(issueId, 'driver');
+        }
+
+        // ==================== CHAT FUNCTIONS ====================
+
+        function openChatModal(issueId, userType) {
+            document.getElementById('chatModal').classList.add('active');
+            document.getElementById('chatTitle').textContent = `Chat - Issue #${issueId.substring(0, 8)}...`;
+            document.getElementById('chatMessages').innerHTML = '<div class="message system"><div class="bubble">Connecting to chat...</div></div>';
+            
+            connectToChat(issueId, userType);
+        }
+
+        function closeChat() {
+            document.getElementById('chatModal').classList.remove('active');
+            if (chatSocket) {
+                chatSocket.close();
+                chatSocket = null;
+            }
+            updateChatStatus('disconnected');
+        }
+
+        function updateChatStatus(status) {
+            const dot = document.getElementById('chatStatusDot');
+            const text = document.getElementById('chatStatusText');
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('chatSendBtn');
+
+            dot.className = `status-dot ${status}`;
+            
+            switch (status) {
+                case 'connected':
+                    text.textContent = 'Connected';
+                    input.disabled = false;
+                    sendBtn.disabled = false;
+                    break;
+                case 'connecting':
+                    text.textContent = 'Connecting...';
+                    input.disabled = true;
+                    sendBtn.disabled = true;
+                    break;
+                case 'disconnected':
+                default:
+                    text.textContent = 'Disconnected';
+                    input.disabled = true;
+                    sendBtn.disabled = true;
+                    break;
+            }
+        }
+
+        async function connectToChat(issueId, userType) {
+            updateChatStatus('connecting');
+
+            let backendUrl, token, chatBackendUrl;
+            
+            // Use driver backend for WebSocket chat (shared chat server)
+            // Both customer and driver connect to the same WebSocket server
+            const driverBackendUrl = document.getElementById('driverBackendUrl').value;
+            chatBackendUrl = driverBackendUrl;  // Both use driver backend for real-time chat
+            
+            if (userType === 'customer') {
+                backendUrl = document.getElementById('customerBackendUrl').value;
+                token = document.getElementById('customerToken').value;
+            } else {
+                backendUrl = document.getElementById('driverBackendUrl').value;
+                token = document.getElementById('driverToken').value;
+            }
+
+            // Load chat history from user's own backend (messages are decrypted server-side)
+            await loadChatHistory(issueId, userType, backendUrl, token);
+
+            // Connect WebSocket to shared chat server (driver backend)
+            const wsUrl = chatBackendUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+            const fullUrl = `${wsUrl}/api/chat/ws/${issueId}?token=${token}`;
+            
+            console.log('Connecting to WebSocket:', fullUrl);  // Debug log
+
+            try {
+                chatSocket = new WebSocket(fullUrl);
+
+                chatSocket.onopen = function() {
+                    updateChatStatus('connected');
+                    addChatMessage('Connected to chat', 'system');
+                };
+
+                chatSocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('WebSocket received (json):', data);
+
+                        if (data.type === 'chat') {
+                            // Compare sender_id with currentUserId (normalize both to lowercase)
+                            const senderId = (data.sender_id || '').toString().toLowerCase();
+                            const myId = (currentUserId || '').toString().toLowerCase();
+                            const isSent = senderId === myId;
+
+                            console.log('Message check:', { senderId, myId, isSent });
+
+                            // Accept multiple possible text fields for resilience
+                            const text = data.encrypted_text || data.message || data.text || '';
+
+                            if (!isSent) {
+                                addChatMessage(text, 'received', data.sender_type, data.timestamp);
+                            }
+                        } else if (data.type === 'system') {
+                            addChatMessage(data.message, 'system');
+                        } else if (data.type === 'chat_closed') {
+                            addChatMessage(data.message, 'system');
+                            updateChatStatus('disconnected');
+                            showToast('Chat has been closed', 'info');
+                        } else if (data.type === 'error') {
+                            addChatMessage(data.message, 'system');
+                            showToast(data.message, 'error');
+                        } else {
+                            // Unknown JSON message
+                            console.log('Unknown JSON message:', data);
+                        }
+                    } catch (e) {
+                        // Some server responses are plain strings like 'pong' - handle them
+                        if (event.data === 'pong') {
+                            // ignore keepalive
+                            return;
+                        }
+                        // Try to parse as fallback or show raw data in debug
+                        console.log('Received non-json message:', event.data);
+                        addDebugLine(`RAW: ${event.data}`);
+                    }
+                };
+
+                chatSocket.onclose = function(event) {
+                    updateChatStatus('disconnected');
+                    if (event.code !== 1000) {
+                        addChatMessage(`Disconnected (Code: ${event.code})`, 'system');
+                    }
+                };
+
+                chatSocket.onerror = function(error) {
+                    updateChatStatus('disconnected');
+                    showToast('Connection error', 'error');
+                };
+
+            } catch (e) {
+                updateChatStatus('disconnected');
+                showToast('Failed to connect', 'error');
+            }
+        }
+
+        async function loadChatHistory(issueId, userType, backendUrl, token) {
+            try {
+                const response = await fetch(`${backendUrl}/api/chat/history/${issueId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = '';
+
+                    if (data.messages && data.messages.length > 0) {
+                        // Server returns decrypted text
+                        for (const msg of data.messages) {
+                            const isSent = msg.sender_id === currentUserId;
+                            addChatMessage(msg.text, isSent ? 'sent' : 'received', msg.sender_type, msg.created_at);
+                        }
+                    } else {
+                        addChatMessage('No previous messages', 'system');
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load chat history:', e);
+            }
+        }
+
+        /**
+         * Add a chat message to the UI
+         * Server handles encryption/decryption - we receive plain text
+         */
+        function addChatMessage(text, type = 'received', senderType = '', timestamp = null) {
+            const container = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            let html = '';
+            if (type !== 'system' && senderType) {
+                html += `<div class="sender">${senderType} 🔒</div>`;
+            }
+            html += `<div class="bubble">${escapeHtml(text)}</div>`;
+            if (timestamp) {
+                html += `<div class="time">${new Date(timestamp).toLocaleTimeString()}</div>`;
+            }
+
+            messageDiv.innerHTML = html;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        /**
+         * Escape HTML to prevent XSS
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            // Send plain text - server handles encryption
+            chatSocket.send(message);
+            
+            // Add to local chat UI
+            addChatMessage(message, 'sent', currentUserType, new Date().toISOString());
+            
+            input.value = '';
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        // Keep WebSocket alive with ping
+        setInterval(() => {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send('ping');
+            }
+        }, 30000);
+
+        // Debug helper to append lines to the chat debug area
+        function addDebugLine(line) {
+            const area = document.getElementById('chatDebugArea');
+            if (!area) return;
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${line}`;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+    </script>
+</body>
+</html>

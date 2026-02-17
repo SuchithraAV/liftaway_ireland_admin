@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Driver / Customer WebSocket Side-by-Side Test</title>
+  <style>
+    body{font-family:Segoe UI,Arial;margin:12px}
+    .container{display:flex;gap:12px}
+    .panel{flex:1;border:1px solid #ddd;padding:12px}
+    .log{height:300px;overflow:auto;background:#fafafa;border:1px solid #eee;padding:8px}
+    label{display:block;margin:6px 0}
+    button{margin-right:6px}
+  </style>
+</head>
+<body>
+  <h2>Driver / Customer WebSocket Side-by-Side Test</h2>
+  <p>Open driver and customer connections at the same time and observe messages and Redis-backed location behavior.</p>
+
+  <div class="container">
+    <div class="panel" id="driverPanel">
+      <h3>Driver</h3>
+      <label>Backend base URL: <input id="drv_base" value="ws://localhost:8002/api" style="width:100%"/></label>
+      <div style="margin:8px 0">
+        <label><input type="radio" name="drv_host_choice" value="local" checked /> Use localhost</label>
+        <label><input type="radio" name="drv_host_choice" value="remote" /> Use remote host</label>
+      </div>
+      <label>Issue ID: <input id="drv_issue" value="77a09a49-35e1-4256-8dd4-381cebb0bd66" /></label>
+      <label>Access Key: <input id="drv_key" value="driver-secret" style="width:100%"/></label>
+      <div style="margin:8px 0">
+        <button id="drv_connect">Connect</button>
+        <button id="drv_disconnect">Disconnect</button>
+        <!-- driver will auto-send every 10 seconds when connected -->
+      </div>
+      <label>Manual lat: <input id="drv_lat" value="12.9129842" /></label>
+      <label>Manual lng: <input id="drv_lng" value="77.6421466" /></label>
+      <div class="log" id="drv_log"></div>
+    </div>
+
+    <div class="panel" id="custPanel">
+      <h3>Customer</h3>
+      <p style="font-size:12px;color:#666">Note: Use same port as driver (8002) - both endpoints are in technician backend</p>
+      <label>Backend base URL: <input id="cust_base" value="ws://localhost:8002/api" style="width:100%"/></label>
+      <div style="margin:8px 0">
+        <label><input type="radio" name="cust_host_choice" value="local" checked /> Use localhost</label>
+        <label><input type="radio" name="cust_host_choice" value="remote" /> Use remote host</label>
+      </div>
+      <label>Issue ID: <input id="cust_issue" value="77a09a49-35e1-4256-8dd4-381cebb0bd66" /></label>
+      <label>Access Key: <input id="cust_key" value="customer-secret" style="width:100%"/></label>
+      <div style="margin:8px 0">
+        <button id="cust_connect">Connect</button>
+        <button id="cust_disconnect">Disconnect</button>
+      </div>
+      <div class="log" id="cust_log"></div>
+    </div>
+  </div>
+
+  <script>
+    let drvWs = null;
+    let custWs = null;
+
+    function appendLog(elId, msg){ const el = document.getElementById(elId); el.textContent += new Date().toISOString() + ' | ' + msg + '\n'; el.scrollTop = el.scrollHeight; }
+
+    document.getElementById('drv_connect').addEventListener('click', ()=>{
+  const drvHostChoice = document.querySelector('input[name="drv_host_choice"]:checked').value;
+  const remoteHost = 'public-primary-redis-inmumbaizone2-189555-1655760.db.onutho.com';
+  const base = (drvHostChoice === 'remote') ? `ws://${remoteHost}:8002/api` : document.getElementById('drv_base').value.trim();
+      const issue = document.getElementById('drv_issue').value.trim();
+      const key = document.getElementById('drv_key').value.trim();
+      const url = `${base}/driver/location/${encodeURIComponent(issue)}?access_key=${encodeURIComponent(key)}`;
+      appendLog('drv_log','connecting to ' + url);
+      drvWs = new WebSocket(url);
+      // Auto-send logic: send immediately on open, then every 10s
+      let drvSendInterval = null;
+      function sendDriverLocationOnce(){
+        if(!drvWs || drvWs.readyState !== WebSocket.OPEN){ appendLog('drv_log','ws not open — skipping send'); return; }
+        const lat = parseFloat(document.getElementById('drv_lat').value);
+        const lng = parseFloat(document.getElementById('drv_lng').value);
+        const payload = { driver_id: 'driver-sideby', lat, lng, accuracy: null, updated_at: new Date().toISOString() };
+        try{ drvWs.send(JSON.stringify(payload)); appendLog('drv_log','sent: ' + JSON.stringify(payload)); }catch(e){ appendLog('drv_log','send failed: ' + e); }
+      }
+
+      drvWs.onopen = ()=>{
+        appendLog('drv_log','ws open');
+        // send once immediately and then on interval
+        sendDriverLocationOnce();
+        drvSendInterval = setInterval(sendDriverLocationOnce, 10000);
+      };
+      drvWs.onmessage = (ev)=>{
+        appendLog('drv_log','recv: ' + ev.data);
+        try{
+          const msg = JSON.parse(ev.data);
+          // If server reports issue completed or any error, stop auto-sending
+          if(msg && (msg.error === 'issue_already_completed' || msg.error === 'issue_not_found' || msg.error)){
+            appendLog('drv_log','received completion/error from server, stopping auto-send');
+            try{ if(drvSendInterval){ clearInterval(drvSendInterval); drvSendInterval = null; } }catch(e){}
+            try{ if(drvWs && drvWs.readyState === WebSocket.OPEN){ drvWs.close(); } }catch(e){}
+          }
+        }catch(e){ /* non-json message or parse error */ }
+      };
+      drvWs.onclose = (ev)=>{ appendLog('drv_log','ws closed: ' + JSON.stringify({code:ev.code, reason: ev.reason})); if(drvSendInterval){ clearInterval(drvSendInterval); drvSendInterval=null; } };
+      drvWs.onerror = ()=> appendLog('drv_log','ws error');
+    });
+
+  document.getElementById('drv_disconnect').addEventListener('click', ()=>{ if(drvWs){ drvWs.close(); drvWs=null; appendLog('drv_log','closed'); } try{ if(typeof drvSendInterval !== 'undefined' && drvSendInterval){ clearInterval(drvSendInterval); drvSendInterval=null; } }catch(e){} });
+
+    // send button removed; auto-send handles periodic updates
+
+    document.getElementById('cust_connect').addEventListener('click', ()=>{
+  const custHostChoice = document.querySelector('input[name="cust_host_choice"]:checked').value;
+  const base = (custHostChoice === 'remote') ? `ws://${remoteHost}:8002/api` : document.getElementById('cust_base').value.trim();
+      const issue = document.getElementById('cust_issue').value.trim();
+      const key = document.getElementById('cust_key').value.trim();
+      const url = `${base}/customer/location/${encodeURIComponent(issue)}?access_key=${encodeURIComponent(key)}`;
+      appendLog('cust_log','connecting to ' + url);
+      custWs = new WebSocket(url);
+      custWs.onopen = ()=> appendLog('cust_log','ws open');
+      custWs.onmessage = (ev)=> appendLog('cust_log','recv: ' + ev.data);
+      custWs.onclose = (ev)=> appendLog('cust_log','ws closed: ' + JSON.stringify({code:ev.code, reason: ev.reason}));
+      custWs.onerror = ()=> appendLog('cust_log','ws error');
+    });
+
+    document.getElementById('cust_disconnect').addEventListener('click', ()=>{ if(custWs){ custWs.close(); custWs=null; appendLog('cust_log','closed'); } });
+  </script>
+</body>
+</html>

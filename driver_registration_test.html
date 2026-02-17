@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Registration - File Upload Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        input[type="number"],
+        select {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: #f8f9ff;
+            cursor: pointer;
+        }
+
+        input[type="file"]:hover {
+            background: #eef0ff;
+        }
+
+        .file-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .file-label::before {
+            content: "📎";
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            display: block;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            display: block;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result pre {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .uploaded-files {
+            margin-top: 15px;
+        }
+
+        .uploaded-files h4 {
+            margin-bottom: 10px;
+        }
+
+        .file-link {
+            display: block;
+            padding: 5px 0;
+            color: #155724;
+            text-decoration: none;
+        }
+
+        .file-link:hover {
+            text-decoration: underline;
+        }
+
+        .api-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .api-info code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚗 Driver Registration</h1>
+        <p class="subtitle">Register as a driver with document uploads</p>
+
+        <div class="api-info">
+            <strong>API Endpoint:</strong> <code>POST /api/auth/register/driver/upload</code><br>
+            <strong>Content-Type:</strong> <code>multipart/form-data</code>
+        </div>
+
+        <form id="driverForm" enctype="multipart/form-data">
+            <!-- Personal Details -->
+            <div class="section">
+                <div class="section-title">👤 Personal Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="full_name">Full Name *</label>
+                        <input type="text" id="full_name" name="full_name" required value="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number *</label>
+                        <input type="text" id="phone_number" name="phone_number" required value="+919876543210">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required value="john.doe@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="dob">Date of Birth *</label>
+                        <input type="date" id="dob" name="dob" required value="1990-05-15">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address">Address *</label>
+                    <input type="text" id="address" name="address" required value="123 Main Street, Hyderabad">
+                </div>
+            </div>
+
+            <!-- Identity Verification -->
+            <div class="section">
+                <div class="section-title">🪪 Identity Verification</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="govt_id_type">Government ID Type *</label>
+                        <select id="govt_id_type" name="govt_id_type" required>
+                            <option value="aadhaar">Aadhaar Card</option>
+                            <option value="pan">PAN Card</option>
+                            <option value="passport">Passport</option>
+                            <option value="voter_id">Voter ID</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="govt_id_number">Government ID Number *</label>
+                        <input type="text" id="govt_id_number" name="govt_id_number" required value="XXXX-XXXX-1234">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="govt_id_photo" class="file-label">Government ID Photo *</label>
+                        <input type="file" id="govt_id_photo" name="govt_id_photo" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="selfie_photo" class="file-label">Selfie Photo *</label>
+                        <input type="file" id="selfie_photo" name="selfie_photo" accept="image/*" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Details -->
+            <div class="section">
+                <div class="section-title">💼 Professional Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="years_of_experience">Years of Experience *</label>
+                        <input type="number" id="years_of_experience" name="years_of_experience" required value="5"
+                            min="0">
+                    </div>
+
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="license_number">License Number *</label>
+                        <input type="text" id="license_number" name="license_number" required value="DL-1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="license_category">License Category *</label>
+                        <select id="license_category" name="license_category" required>
+                            <option value="LMV">LMV (Light Motor Vehicle)</option>
+                            <option value="HMV">HMV (Heavy Motor Vehicle)</option>
+                            <option value="MCWG">MCWG (Motorcycle with Gear)</option>
+                            <option value="MCWOG">MCWOG (Motorcycle without Gear)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="license_expiry_date">License Expiry Date *</label>
+                        <input type="date" id="license_expiry_date" name="license_expiry_date" required
+                            value="2030-12-31">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="license_front" class="file-label">License Front Photo *</label>
+                        <input type="file" id="license_front" name="license_front" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="license_back" class="file-label">License Back Photo *</label>
+                        <input type="file" id="license_back" name="license_back" accept="image/*" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="driver_photo" class="file-label">Driver Photo *</label>
+                        <input type="file" id="driver_photo" name="driver_photo" accept="image/*" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Details -->
+            <div class="section">
+                <div class="section-title">🚙 Vehicle Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicle_type">Vehicle Type *</label>
+                        <select id="vehicle_type" name="vehicle_type" required>
+                            <option value="car">Car</option>
+                            <option value="bike">Bike</option>
+                            <option value="tow_truck">Tow Truck</option>
+                            <option value="van">Van</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle_number">Vehicle Number *</label>
+                        <input type="text" id="vehicle_number" name="vehicle_number" required value="TS09AB1234">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicle_model">Vehicle Model *</label>
+                        <input type="text" id="vehicle_model" name="vehicle_model" required value="Maruti Swift">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle_capacity">Vehicle Capacity *</label>
+                        <input type="text" id="vehicle_capacity" name="vehicle_capacity" required value="4 passengers">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicle_photo" class="file-label">Vehicle Photo *</label>
+                        <input type="file" id="vehicle_photo" name="vehicle_photo" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rc_book_photo" class="file-label">RC Book Photo *</label>
+                        <input type="file" id="rc_book_photo" name="rc_book_photo" accept="image/*" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pollution_certificate_photo" class="file-label">Pollution Certificate Photo
+                            *</label>
+                        <input type="file" id="pollution_certificate_photo" name="pollution_certificate_photo"
+                            accept="image/*" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Area Details -->
+            <div class="section">
+                <div class="section-title">📍 Service Area Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pincodes">Service Pincodes (comma separated) *</label>
+                        <input type="text" id="pincodes" name="pincodes" required value="500001,500002,500003">
+                    </div>
+                    <div class="form-group">
+                        <label for="preferred_shift">Preferred Shift *</label>
+                        <select id="preferred_shift" name="preferred_shift" required>
+                            <option value="morning">Morning (6 AM - 2 PM)</option>
+                            <option value="afternoon">Afternoon (2 PM - 10 PM)</option>
+                            <option value="night">Night (10 PM - 6 AM)</option>
+                            <option value="flexible">Flexible</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="section">
+                <div class="section-title">🏦 Bank Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="account_number">Account Number *</label>
+                        <input type="text" id="account_number" name="account_number" required value="1234567890123456">
+                    </div>
+                    <div class="form-group">
+                        <label for="sort_code">IFSC Code *</label>
+                        <input type="text" id="sort_code" name="sort_code" required value="HDFC0001234">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="holder_name">Account Holder Name *</label>
+                        <input type="text" id="holder_name" name="holder_name" required value="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="upi_id">UPI ID *</label>
+                        <input type="text" id="upi_id" name="upi_id" required value="johndoe@upi">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn">Register Driver</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Uploading files and registering driver...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        // Configuration - Change this to your API base URL
+        const API_BASE_URL = 'http://localhost:8002';
+
+        document.getElementById('driverForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+
+            // Disable form
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            result.className = 'result';
+            result.style.display = 'none';
+
+            try {
+                const formData = new FormData(form);
+
+                const response = await fetch(`${API_BASE_URL}/api/auth/register/driver/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    result.className = 'result success';
+
+                    let uploadedFilesHtml = '';
+                    if (data.uploaded_files) {
+                        uploadedFilesHtml = `
+                            <div class="uploaded-files">
+                                <h4>📁 Uploaded Files:</h4>
+                                ${Object.entries(data.uploaded_files).map(([key, url]) =>
+                            `<a href="${url}" target="_blank" class="file-link">✅ ${key}: ${url}</a>`
+                        ).join('')}
+                            </div>
+                        `;
+                    }
+
+                    result.innerHTML = `
+                        <h3>✅ Registration Successful!</h3>
+                        <p><strong>Driver ID:</strong> ${data.driver_id}</p>
+                        <p><strong>Phone:</strong> ${data.phone_number}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        ${uploadedFilesHtml}
+                        <h4>Full Response:</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <h3>❌ Registration Failed</h3>
+                        <p><strong>Error:</strong> ${data.detail || 'Unknown error occurred'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `
+                    <h3>❌ Request Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>Make sure the API server is running at <code>${API_BASE_URL}</code></p>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                loading.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+
+</html>
