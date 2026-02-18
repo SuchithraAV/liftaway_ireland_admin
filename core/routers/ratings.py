@@ -8,6 +8,7 @@ from core.database import get_db
 
 from core.schemas import RatingCreate, RatingResponse
 from core.dependencies import get_current_customer
+from core.utils.field_encryption import decrypt_field
 
 router = APIRouter(prefix="/ratings", tags=["Ratings"])
 
@@ -69,8 +70,8 @@ async def create_rating(
         "rating": new_rating.rating,
         "comments": new_rating.comments,
         "created_at": new_rating.created_at,
-        "customer_name": customer.full_name,
-        "technician_name": technician.full_name if technician else None
+        "customer_name": decrypt_field(customer.full_name),
+        "technician_name": decrypt_field(technician.full_name) if technician else None
     }
 
 

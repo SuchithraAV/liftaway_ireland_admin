@@ -210,23 +210,21 @@ async def accept_issue(
         except Exception as e:
             logger.warning(f"⚠️ Cache invalidation failed (non-fatal): {e}")
         
-        # Send OTP to customer via SMS
-        otp_sent = False
+        # Send OTP to customer via Twilio Verify API (same as registration)
         if customer and customer.phone_number and issue.otp_code:
             try:
                 if twilio_service:
-                    # Send the issue's OTP code via SMS (not Verify API)
                     from core.utils.field_encryption import decrypt_phone
                     decrypted_phone = decrypt_phone(customer.phone_number)
-                    message = f"Your OTP for service completion is: {issue.otp_code}. Share this with the driver when work is complete."
-                    result = twilio_service.send_sms(decrypted_phone, message)
-                    if result["success"]:
-                        logger.info(f"✅ OTP {issue.otp_code} sent via SMS to {decrypted_phone}")
-                        otp_sent = True
+                    
+                    # Use Twilio Verify API to send OTP
+                    otp_result = twilio_service.send_otp(decrypted_phone)
+                    if otp_result["success"]:
+                        logger.info(f"✅ OTP sent to customer via Twilio Verify")
                     else:
-                        logger.error(f"❌ Failed to send OTP: {result.get('error')}")
+                        logger.error(f"❌ Failed to send OTP: {otp_result.get('error')}")
                 else:
-                    logger.warning(f"⚠️ Twilio not configured - OTP {issue.otp_code} not sent")
+                    logger.warning(f"⚠️ Twilio not configured")
             except Exception as e:
                 logger.error(f"❌ Failed to send OTP: {str(e)}")
                 logger.exception(e)
@@ -328,7 +326,9 @@ async def update_issue_status(
             
             # Verify OTP via Twilio Verify API
             if twilio_service and customer:
-                verify_result = twilio_service.verify_otp(customer.phone_number, status_update.otp_code)
+                from core.utils.field_encryption import decrypt_phone
+                decrypted_phone = decrypt_phone(customer.phone_number)
+                verify_result = twilio_service.verify_otp(decrypted_phone, status_update.otp_code)
                 if not verify_result["success"]:
                     raise HTTPException(status_code=400, detail=verify_result.get("error", "Invalid OTP code"))
             else:
@@ -348,11 +348,10 @@ async def update_issue_status(
             else:
                 total_amount = issue.payment_amount or 0
             
-            # Calculate driver's 80% share and platform's 20% fee
+            # Calculate driver's 80% share
             from decimal import Decimal
             total_decimal = Decimal(str(total_amount))
-            platform_fee = (total_decimal * Decimal('0.20')).quantize(Decimal('0.01'))
-            driver_amount = total_decimal - platform_fee
+            driver_amount = (total_decimal * Decimal('0.80')).quantize(Decimal('0.01'))
             
             # Create driver earning record
             earning = DriverEarning(
@@ -360,9 +359,7 @@ async def update_issue_status(
                 issue_id=issue.id,
                 date=datetime.now(),
                 jobs_done=1,
-                amount=driver_amount,  # Driver's 80% share
-                total_job_amount=total_decimal,  # Original total
-                platform_fee=platform_fee,  # Platform's 20% share
+                amount=driver_amount,
                 payout_status="pending"
             )
             db.add(earning)

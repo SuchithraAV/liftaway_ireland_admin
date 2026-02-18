@@ -24,6 +24,7 @@ from config import settings
 from core.database import get_db
 from core.models import Payment, Driver, Customer, Issue
 from core.dependencies import get_current_driver
+from core.utils.field_encryption import decrypt_field
 
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
