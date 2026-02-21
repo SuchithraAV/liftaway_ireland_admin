@@ -122,8 +122,8 @@ async def get_all_payments(
             stripe_payout_id=payment.stripe_payout_id,
             created_at=payment.created_at,
             updated_at=payment.updated_at,
-            customer_name=payment.customer.full_name if payment.customer else None,
-            driver_name=payment.driver.full_name if payment.driver else None
+            customer_name=decrypt_field(payment.customer.full_name) if payment.customer and payment.customer.full_name else None,
+            driver_name=decrypt_field(payment.driver.full_name) if payment.driver and payment.driver.full_name else None
         )
         response_list.append(response)
     
@@ -171,8 +171,8 @@ async def get_my_payments(
             stripe_payout_id=payment.stripe_payout_id,
             created_at=payment.created_at,
             updated_at=payment.updated_at,
-            customer_name=payment.customer.full_name if payment.customer else None,
-            driver_name=current_driver.full_name
+            customer_name=decrypt_field(payment.customer.full_name) if payment.customer and payment.customer.full_name else None,
+            driver_name=decrypt_field(current_driver.full_name) if current_driver.full_name else None
         )
         response_list.append(response)
     
@@ -221,8 +221,8 @@ async def get_all_withdrawals(
             stripe_payout_id=payment.stripe_payout_id,
             created_at=payment.created_at,
             updated_at=payment.updated_at,
-            customer_name=payment.customer.full_name if payment.customer else None,
-            driver_name=payment.driver.full_name if payment.driver else None
+            customer_name=decrypt_field(payment.customer.full_name) if payment.customer and payment.customer.full_name else None,
+            driver_name=decrypt_field(payment.driver.full_name) if payment.driver and payment.driver.full_name else None
         )
         response_list.append(response)
     
@@ -329,6 +329,6 @@ async def get_payment_detail(
         stripe_payout_id=payment.stripe_payout_id,
         created_at=payment.created_at,
         updated_at=payment.updated_at,
-        customer_name=payment.customer.full_name if payment.customer else None,
-        driver_name=payment.driver.full_name if payment.driver else None
+        customer_name=decrypt_field(payment.customer.full_name) if payment.customer and payment.customer.full_name else None,
+        driver_name=decrypt_field(payment.driver.full_name) if payment.driver and payment.driver.full_name else None
     )
