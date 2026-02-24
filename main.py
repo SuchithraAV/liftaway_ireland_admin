@@ -171,6 +171,7 @@ async def response_validation_exception_handler(request: Request, exc: ResponseV
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:3000",
         "https://www.liftawaysolutions.com",
         "https://liftawaysolutions.com",
         "https://driver.liftawaysolutions.com",
