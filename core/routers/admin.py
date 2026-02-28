@@ -398,7 +398,10 @@ async def get_drivers(
     per_page = 10
     offset = (page - 1) * per_page
     
-    query = select(Driver)
+    query = select(Driver).options(
+        selectinload(Driver.vehicles),
+        selectinload(Driver.documents)
+    )
     
     if search:
         query = query.where(
@@ -422,14 +425,17 @@ async def get_drivers(
     # Decrypt driver data
     decrypted_drivers = []
     for driver in drivers:
+        vehicle = driver.vehicles[0] if driver.vehicles else None
+        document = driver.documents[0] if driver.documents else None
+        
         decrypted_drivers.append({
             "id": driver.id,
             "full_name": decrypt_field(driver.full_name) if driver.full_name else None,
             "email": decrypt_email(driver.email) if driver.email else None,
             "phone_number": decrypt_phone(driver.phone_number) if driver.phone_number else None,
-            "vehicle_type": driver.vehicle_type,
-            "vehicle_number_plate": driver.vehicle_number_plate,
-            "license_number": driver.license_number,
+            "vehicle_type": vehicle.vehicle_type if vehicle else None,
+            "vehicle_number_plate": vehicle.vehicle_number_plate if vehicle else None,
+            "license_number": document.license_number if document else None,
             "approval_status": driver.approval_status,
             "is_active": driver.is_active,
             "is_online": driver.is_online,
