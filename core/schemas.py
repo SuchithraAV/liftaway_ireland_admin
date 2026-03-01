@@ -563,7 +563,7 @@ class NotificationResponse(BaseModel):
     message: str
     data: Optional[dict] = None
     is_read: bool
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
